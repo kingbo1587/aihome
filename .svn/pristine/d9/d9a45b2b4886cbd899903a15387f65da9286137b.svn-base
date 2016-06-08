@@ -1,0 +1,140 @@
+/*背景图*/
+
+.a_background {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.a_background > .top{
+    width: 100%;
+    height: 71.6%;
+    background-image: url("images/background/a_background_top.png");
+    background-size: 100% 100%;
+}
+
+.a_background > .middle{
+    width: 100%;
+    height: 13.1%;
+    background-image: url("images/background/a_background_middle.png");
+    background-size: 100% 100%;
+}
+
+.a_background > .bottom{
+    width: 100%;
+    height: 15.3%;
+    background-image: url("images/background/a_background_bottom.png");
+    background-size: 100% 100%;
+}
+
+/*太阳*/
+#sun {
+	background: url('images/sun.png') no-repeat;
+	width: 201px;
+	height: 201px;
+	position: absolute;
+	top: -30px;
+	right: 40%;
+	z-index: 1;
+}
+.rotation {
+	-webkit-animation-name: rotation;
+	-webkit-animation-duration: 30s;
+	-moz-animation-name: rotation;
+	-moz-animation-duration: 30s;
+}
+@-webkit-keyframes rotation{
+	0% {
+		transform: translateX(0) translateY(0);
+	}
+	100% {
+		transform: translateX(-2000px) translateY(400px);
+	}
+}
+@-moz-keyframes rotation{
+	0% {
+		transform: translateX(0) translateY(0);
+	}
+	100% {
+		transform: translateX(-2000px) translateY(400px);
+	}
+}
+
+/*云*/
+.cloud {
+	z-index: 2;
+	position: absolute;
+}
+.smallCloud {
+	background: url('images/cloud1.png') no-repeat;
+	width: 181px;
+	height: 101px;
+	left: 5%;
+	top: 15%;
+}
+.bigCloud {
+	background: url('images/cloud2.png') no-repeat;
+	width: 301px;
+	height: 140px;
+	right: 5%;
+}
+.smallCloudAnim {
+	-webkit-animation-name: smallCloud;
+	-webkit-animation-duration: 8s;
+	-webkit-animation-iteration-count: infinite;
+	-moz-animation-name: smallCloud;
+	-moz-animation-duration: 8s;
+	-moz-animation-iteration-count: infinite;
+}
+@-webkit-keyframes smallCloud {
+	0% {
+		left: -5%;
+	}
+	50% {
+		left: 20%;
+	}
+	100% {
+		left: -5%;
+	}
+}
+@-moz-keyframes smallCloud {
+	0% {
+		left: -5%;
+	}
+	50% {
+		left: 20%;
+	}
+	100% {
+		left: -5%;
+	}
+}
+.bigCloudAnim {
+	-webkit-animation-name: bigCloud;
+	-webkit-animation-duration: 12s;
+	-webkit-animation-iteration-count: infinite;
+	-moz-animation-name: bigCloud;
+	-moz-animation-duration: 12s;
+	-moz-animation-iteration-count: infinite;
+}
+@-webkit-keyframes bigCloud {
+	0% {
+		right: -5%;
+	}
+	50% {
+		right: 20%;
+	}
+	100% {
+		right: -5%;
+	}
+}
+@-moz-keyframes bigCloud {
+	0% {
+		right: -5%;
+	}
+	50% {
+		right: 20%;
+	}
+	100% {
+		right: -5%;
+	}
+}

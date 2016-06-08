@@ -1,0 +1,91 @@
+/**
+ * 小孩走路
+ * @param {[type]} container [description]
+ */
+function BoyWalk(){
+	var container = $("#content");
+	// 页面可视区域
+	var visualWidth = container.width();
+	var visualHeight = container.height();
+
+	// 获取数据
+	var getValue = function(className){
+		var element = $(''+className);
+		return {
+			height: element.height(),
+			top: element.position().top
+		};
+	}
+
+	// 获取路的Y轴
+	var pathY = function(){
+		var data = getValue('.a_background .middle');
+		return data.top + data.height / 2;
+	}();
+
+	// 调整小男孩
+	var boy = $('#boy');
+	var boyHeight = boy.height();
+	boy.css({
+		top: pathY - boyHeight + 25 + 'px'
+	});
+	
+	//=====动画部分====
+	
+	// 计算移动距离
+	function calculateDist(direction, proportion){
+		return (direction=='x' ? visualWidth : visualHeight) * proportion;
+	}
+	
+	// css3走路
+	function slowWalk(){
+		boy.addClass('slowWalk');
+	}
+	
+	// 恢复走路
+	function restoreWalk(){
+		boy.removeClass('pauseWalk');
+	}
+	
+	
+	// 利用JQuery的transition 移动
+	function startRun(options,runTime){
+		var dfdPlay = $.Deferred();
+		// 恢复走路
+		restoreWalk();
+		// 运动属性
+		boy.transition(
+			options,
+			runTime,
+			'linear',
+			function(){
+				// 动画完成
+				dfdPlay.resolve();
+			});
+		return dfdPlay;
+	}
+	
+	// 人物移动
+	function walkRun(time,distX,distY){
+		time = time || 3000;
+		// 脚动作
+		slowWalk();
+		// 走路
+		var dfdPlay = startRun({
+			'left': distX,
+			'top': distY ? distY: undefined
+		},time);
+		return dfdPlay;
+	}
+	
+	return {
+		walkTo: function(time, proportionX, proportionY){
+			var distX = calculateDist('x', proportionX);
+			var distY = calculateDist('y', proportionY);
+			return walkRun(time, distX, distY);
+		},
+		setColor: function(value){
+			boy.css('background-color', value);
+		}
+	}
+}		

@@ -1,0 +1,44 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%
+    String path = request.getContextPath();
+    String basePath = request.getScheme() + "://"
+            + request.getServerName() + ":" + request.getServerPort()
+            + request.getContextPath();
+    request.setAttribute("basePath", basePath);
+%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="${basePath}/resources/js/jslib/jquery-1.8.3.min.js"></script>
+<script>
+    /* $(function(){
+     alert(2);
+     }); */
+</script>
+</head>
+<body>
+    <div style="width: 800px; height: 400px;">dd</div>
+    <img alt="" src="${basePath}/resources/image/meetyoufindme.jpg" />
+    <input id="checkJsApi" type="button" value="检查" />
+</body>
+<%@include file="/WEB-INF/jsp/weixin/jssdk/common/config.jsp"%>
+<script>
+    wx.ready(function() {
+        // 1 判断当前版本是否支持指定 JS 接口，支持批量判断
+        document.querySelector('#checkJsApi').onclick = function() {
+            wx.checkJsApi({
+                jsApiList : [ 'getNetworkType', 'previewImage' ],
+                success : function(res) {
+                    var str = JSON.stringify(res);
+                    alert(str);
+                    //alert(JSON.stringify(res));
+                }
+            });
+        };
+    });
+</script>
+</html>

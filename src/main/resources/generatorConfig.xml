@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN" "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd" >
+<generatorConfiguration>
+	<classPathEntry location="D:/work/resources/mysql-connector-java-5.1.36.jar" />
+	<context id="test">
+		<jdbcConnection driverClass="com.mysql.jdbc.Driver"
+			connectionURL="jdbc:mysql://localhost:3306/test?useUnicode=true&amp;characterEncoding=UTF-8" userId="root" password="root" />
+		<javaModelGenerator targetPackage="com.woohood.aihome.model" targetProject="aihome" />
+		<sqlMapGenerator targetPackage="mapper" targetProject="aihome/src/main/resources" />
+		<javaClientGenerator targetPackage="com.woohood.aihome.persistence" targetProject="aihome" type="XMLMAPPER" />
+		<table schema="untodo" tableName="student_demo">
+			<generatedKey column="id" identity="true" sqlStatement="mysql" />
+		</table>
+	</context>
+</generatorConfiguration>

@@ -1,0 +1,598 @@
+var config = {
+	keepZoomRatio : false,
+	layer : {
+		"width" : "100%",
+		"height" : "100%",
+		"top" : 0,
+		"left" : 0
+	},
+	audio: {
+		enable: true, // 是否开启音乐
+		playURL: 'music/happy.mp3', // 正常播放地址
+		cycleURL: 'music/circulation.mp3' // 正常循环播放地址
+	},
+	setTime : {
+		walkToThird : 6000,
+		walkToMiddle : 6500,
+		walkToEnd : 6500,
+		walkToBridge : 2000,
+		bridgeWalk : 2000,
+		walkToShop : 1500,
+		walkOutShop : 1500,
+		openDoorTime : 800,
+		shutDoorTime : 500,
+		waitRotate : 850,
+		waitFlower : 800
+	},
+	snowflakeURL: [
+		'images/snowflake/snowflake1.png',
+		'images/snowflake/snowflake2.png',
+		'images/snowflake/snowflake3.png',
+		'images/snowflake/snowflake4.png',
+		'images/snowflake/snowflake5.png',
+		'images/snowflake/snowflake6.png'
+	]
+};
+
+$(function(){
+	var debug = 0;
+	if (debug) {
+		$.each(config.setTime, function (key, val) {
+			config.setTime[key] = 500;
+		})
+	}
+	if (config.keepZoomRatio) {
+		var proportionY = 900 / 1440;
+		var screenHeight = $(document).height();
+		var zooomHeight = screenHeight * proportionY;
+		var zooomTop = (screenHeight - zooomHeight) / 2;
+		config.layer.height = zooomHeight;
+		config.layer.top = zooomTop;
+	}
+	
+	if (config.audio.enable) {
+		//背景音乐 //
+		var html5Audio = Html5Audio();
+		html5Audio.play();
+	}
+	
+	var container = $("#content");
+	var swipe = Swipe(container);
+	var visualWidth = container.width();
+	var visualHeight = container.height();
+	function scrollTo(time, proportionX){
+		var distX = container.width() * proportionX;
+		return swipe.scrollTo(distX, time);
+	}
+	var bridgeY = $('.c_background > .middle').position().top;
+	
+	var boy = BoyWalk();
+	var bird = Bird();
+	var girl = Girl();
+	var logo = Logo();
+	var snowflake = Snowflake();
+	var shop = Shop();
+	
+	// 云动
+	$('.smallCloud').addClass('smallCloudAnim');
+	$('.bigCloud').addClass('bigCloudAnim');
+	
+	boy.walkTo(config.setTime.walkToThird, 0.6).then(function(){
+		scrollTo(config.setTime.walkToMiddle, 1);
+		// 太阳动
+		$('#sun').addClass('rotation');
+		return boy.walkTo(config.setTime.walkToMiddle, 0.5);
+	}).then(function(){
+		bird.fly();
+	}).then(function(){
+		// 开门
+		boy.stopWalk();
+		return shop.openDoor(config.setTime.openDoorTime);
+	}).then(function(){
+		// 走进商店
+		shop.openLamp();
+		return boy.toShop(config.setTime.walkToShop);
+	}).then(function(){
+		// 拿花
+		return boy.slowFlowerWalk();
+	}).then(function(){
+		// 走出商店
+		return boy.outShop(config.setTime.walkOutShop);
+	}).then(function(){
+		// 关门
+		return shop.closeDoor(config.setTime.shutDoorTime);
+	}).then(function(){
+		// 关灯
+		shop.closeLamp();
+	}).then(function(){
+		girl.setOffset();
+		scrollTo(config.setTime.walkToEnd, 2);
+		return boy.walkTo(config.setTime.walkToEnd, 0.15);
+	}).then(function(){
+		// 上桥
+		return boy.walkTo(config.setTime.walkToBridge,0.25, (bridgeY - girl.getHeight()) / visualHeight);
+	}).then(function(){
+		// 走到女孩面前
+		return boy.walkTo(config.setTime.bridgeWalk, (girl.getOffset().left - boy.getWidth() + girl.getWidth() / 5) / visualWidth);
+	}).then(function(){
+		boy.resetOriginal();
+		// 增加转身动作 
+		setTimeout(function() {
+			girl.rotate();
+			boy.rotate(function() {
+				// 开始logo动画
+				//logo.run();
+				snowflake.snowflake();
+			});
+		}, config.setTime.waitRotate);
+		
+	});
+});
+
+
+
+// 动画结束事件
+var animationEnd = (function() {
+   var explorer = navigator.userAgent;
+   if (~explorer.indexOf('WebKit')) {
+	   return 'webkitAnimationEnd';
+   }
+   return 'animationend';
+})();
+
+/**
+ * [Swipe description]
+ * @param {[type]} container [页面容器节点]
+ * @param {[type]} options   [参数]
+ */
+function Swipe(container){
+	// 获取第一个子节点
+	var element = container.find(':first');
+	// 获取li的数量
+	var slides = element.find('>li');
+	// 获取容器的宽高
+	var width = container.width();
+	var height = container.height();
+
+	// 设置父元素
+	element.css({
+		width: width * slides.length + 'px',
+		height: height + 'px'
+	});
+	// 设置每个li
+	$.each(slides,function(index,slide){
+		$(slide).css({
+			width: width + 'px',
+			height: height + 'px'
+		});
+	});
+		
+	// 滑动对象
+	var swipe = {};
+	
+	// 监控完成与移动
+	swipe.scrollTo = function (x,speed){
+		element.css({
+			'transition-timing-function':'linear',
+			'transition-duration':speed+'ms',
+			'transform':'translate3d(-'+x+'px,0px,0px)'
+		});
+		return this;
+	}
+	
+	return swipe;
+}
+
+/**
+ * 小孩走路
+ * @param {[type]} container [description]
+ */
+function BoyWalk(){
+	var container = $("#content");
+	// 页面可视区域
+	var visualWidth = container.width();
+	var visualHeight = container.height();
+
+	// 获取数据
+	var getValue = function(className){
+		var element = $(''+className);
+		return {
+			height: element.height(),
+			top: element.position().top
+		};
+	}
+
+	// 获取路的Y轴
+	var pathY = function(){
+		var data = getValue('.a_background .middle');
+		return data.top + data.height / 2;
+	}();
+
+	// 调整小男孩
+	var boy = $('#boy');
+	var boyHeight = boy.height();
+	boy.css({
+		top: pathY - boyHeight + 25 + 'px'
+	});
+	
+	//=====动画部分====
+	
+	// 计算移动距离
+	function calculateDist(direction, proportion){
+		return (direction=='x' ? visualWidth : visualHeight) * proportion;
+	}
+	
+	// css3走路
+	function slowWalk(){
+		boy.addClass('slowWalk');
+	}
+	
+	// 恢复走路
+	function restoreWalk(){
+		boy.removeClass('pauseWalk');
+	}
+	
+	// 拿花走路
+	function slowFlowerWalk(time){
+		time = time || 1000;
+		var defer = $.Deferred();
+		setTimeout(function(){
+			// 取花
+			boy.addClass('slowFlowerWalk');
+			defer.resolve();
+		},time);
+		return defer;
+	}
+	
+	
+	// 利用JQuery的transition 移动
+	function startRun(options,runTime){
+		var dfdPlay = $.Deferred();
+		// 恢复走路
+		restoreWalk();
+		// 运动属性
+		boy.transition(
+			options,
+			runTime,
+			'linear',
+			function(){
+				// 动画完成
+				dfdPlay.resolve();
+			});
+		return dfdPlay;
+	}
+	
+	// 人物移动
+	function walkRun(time,distX,distY){
+		time = time || 3000;
+		// 脚动作
+		slowWalk();
+		// 走路
+		var dfdPlay = startRun({
+			'left': distX,
+			'top': distY ? distY: undefined
+		},time);
+		return dfdPlay;
+	}
+	
+	// 离门距离
+	function distanceDoor(){
+		var door = $('.door');
+		var doorOffset = door.offset();
+		var boyOffset = boy.offset();
+		var distX = (doorOffset.left + door.width() / 2) 
+					- (boyOffset.left + boy.width() / 2);
+		var distY = (doorOffset.top + door.height() / 2)
+					- (boyOffset.top + boy.height());
+		return {
+			x: distX,
+			y: distY
+		};
+	}
+	
+	// 走进商品
+	function walkToShop(runTime){
+		runTime = runTime || 2000;
+		// 计算需要走的记录
+		var distX = distanceDoor().x;
+		// 开始走路
+		var defer = $.Deferred();
+		var walkPlay = startRun({
+			transform: 'translateX(' + distX + 'px),scale(0.3, 0.3)',
+			opacity: 0.1
+		},runTime);
+		// 走完
+		walkPlay.done(function(){
+			boy.css({
+				opacity: 0
+			});
+			defer.resolve();
+		});
+		return defer;
+	}
+	
+	// 走出商店
+	function walkOutShop(runTime){
+		runTime = runTime || 2000;
+		// 恢复走路
+		restoreWalk();
+		// 计算需要走的记录
+		var distX = 0;
+		// 开始走路
+		var defer = $.Deferred();
+		var walkPlay = startRun({
+			transform: 'translateX(' + distX + 'px),scale(1, 1)',
+			opacity: 0.1
+		},runTime);
+		// 走完
+		walkPlay.done(function(){
+			boy.css({
+				opacity: 1
+			});
+			defer.resolve();
+		});
+		return defer;
+	}
+	
+	
+	return {
+		walkTo: function(time, proportionX, proportionY){
+			var distX = calculateDist('x', proportionX);
+			var distY = calculateDist('y', proportionY);
+			return walkRun(time, distX, distY);
+		},
+		stopWalk: function(){
+			boy.addClass('pauseWalk');
+		},
+		setColor: function(value){
+			boy.css('background-color', value);
+		},
+		getWidth: function(){
+			return boy.width();
+		},
+		getHeight: function(){
+			return boy.height();
+		},
+		toShop: function(time){
+			return walkToShop(time);
+		},
+		outShop: function(time){
+			return walkOutShop(time);
+		},
+		slowFlowerWalk: slowFlowerWalk,
+		resetOriginal: function(){
+			this.stopWalk();
+			boy.removeClass('slowWalk slowFlowerWalk').addClass('boyOriginal');
+		},
+		setFlowerWalk:function(){
+			boy.addClass('slowFlowerWalk');
+		},
+		rotate: function(callback){
+			restoreWalk();
+			boy.addClass('boy-rotate');
+			// 监听转身完毕
+			if (callback) {
+				boy.on(animationEnd, function() {
+					callback();
+					$(this).off();
+				});
+			}
+		}
+	};
+}
+
+// 鸟
+function Bird(){
+	var bird = $('.bird');
+	return {
+		fly: function(x, speed){
+			x = x || 1000;
+			speed = speed || 6000;
+			bird.css({
+				'transition-timing-function':'linear',
+				'transition-duration':speed+'ms',
+				'transform':'translate3d(-'+x+'px,0px,0px)'
+			});
+		}
+		
+	};
+	
+}
+
+// 商店
+function Shop(){
+	// 门
+	function doorAction(left, right, time){
+		var leftDoor = $('.door-left');
+		var rightDoor = $('.door-right');
+		
+		var defer = $.Deferred();
+		var count = 2;
+		function complete(){
+			if(count == 1){
+				// 动画完成
+				defer.resolve();
+			}
+			count--;
+		}
+		// 左门移动
+		leftDoor.transition({
+			left: left
+		}, time, 'linear',complete);
+		// 右门移动
+		rightDoor.transition({
+			left: right
+		}, time, 'linear',complete);
+		return defer;
+	}
+	
+	// 灯
+	var lamp = {
+		elem: $('.b_background'),
+		bright: function(){
+			this.elem.addClass('lamp-bright');
+		},
+		dark: function(){
+			this.elem.removeClass('lamp-bright');
+		}
+	}
+	
+	return {
+		openDoor: function (time){
+			return doorAction('-50%', '100%', time || 2000);
+		},
+		closeDoor: function (time){
+			return doorAction('0%', '50%', time || 2000);
+		},
+		openLamp: function(){
+			lamp.bright();
+		},
+		closeLamp: function(){
+			lamp.dark();
+		}
+	};
+}
+
+// 小女孩
+function Girl(){
+	// 获取桥的数据
+	var _bridgeY = $('.c_background > .middle').position().top;
+	var _container = $('#content');
+	
+	return {
+		elem: $('#girl'),
+		getWidth: function(){
+			return this.elem.width();
+		},
+		getHeight: function(){
+			return this.elem.height();
+		},
+		setOffset: function(){
+			this.elem.css({
+				left: _container.width() / 2,
+				top: _bridgeY - this.getHeight()
+			});
+		},
+		getOffset: function(){
+			return this.elem.position();
+		},
+		rotate: function(){
+			this.elem.addClass('girl-rotate');
+		}
+	};	
+}
+
+// 飘花
+function Snowflake (){
+	var _container = $('#content');
+	var _visualHeight = _container.height();
+	var _visualWidth = _container.width();
+	///////
+	//飘雪花 //
+	///////
+	function snowflake() {
+		// 雪花容器
+		var $flakeContainer = $('#snowflake');
+
+		// 随机六张图
+		function getImagesName() {
+			return config.snowflakeURL[[Math.floor(Math.random() * 6)]];
+		}
+		// 创建一个雪花元素
+		function createSnowBox() {
+			var url = getImagesName();
+			return $('<div class="snowbox" />').css({
+				'width': 41,
+				'height': 41,
+				'position': 'absolute',
+				'backgroundSize': 'cover',
+				'zIndex': 100000,
+				'top': '-41px',
+				'backgroundImage': 'url(' + url + ')'
+			}).addClass('snowRoll');
+		}
+		// 开始飘花
+		setInterval(function() {
+			// 运动的轨迹
+			var startPositionLeft = Math.random() * _visualWidth - 100,
+				startOpacity    = 1,
+				endPositionTop  = _visualHeight - 40,
+				endPositionLeft = startPositionLeft - 100 + Math.random() * 500,
+				duration        = _visualHeight * 10 + Math.random() * 5000;
+
+			// 随机透明度，不小于0.5
+			var randomStart = Math.random();
+			randomStart = randomStart < 0.5 ? startOpacity : randomStart;
+
+			// 创建一个雪花
+			var $flake = createSnowBox();
+
+			// 设计起点位置
+			$flake.css({
+				left: startPositionLeft,
+				opacity : randomStart
+			});
+
+			// 加入到容器
+			$flakeContainer.append($flake);
+
+			// 开始执行动画
+			$flake.transition({
+				top: endPositionTop,
+				left: endPositionLeft,
+				opacity: 0.7
+			}, duration, 'ease-out', function() {
+				$(this).remove(); //结束后删除
+			});
+			
+		}, 200);
+	}
+	
+	return {
+		snowflake: snowflake
+	}
+}
+
+//logo动画
+function Logo(){
+	return {
+		elem: $('.logo'),
+		run: function() {
+			this.elem.addClass('logolightSpeedIn')
+				.on(animationEnd, function() {
+					$(this).addClass('logoshake').off();
+			});
+		}
+	};
+}
+
+//背景音乐
+function Html5Audio(){
+	function BackgroundAudio(url, isloop) {
+		var audio = new Audio(url);
+		audio.autoPlay = true;
+		audio.loop = isloop || false;
+		audio.play();
+		return {
+			end: function(callback) {
+				audio.addEventListener('ended', function() {
+					callback();
+				}, false);
+			}
+		};
+	}
+	
+	return {
+		play: function(){
+			var audio1 = BackgroundAudio(config.audio.playURL);
+			audio1.end(function() {
+				BackgroundAudio(config.audio.cycleURL, true);
+			});
+		}
+	}
+}
+
+		
+		
+		
+
